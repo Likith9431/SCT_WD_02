@@ -1,0 +1,68 @@
+import time
+import ipywidgets as widgets
+from IPython.display import display, clear_output
+import threading
+
+# Global variables
+start_time = 0
+elapsed_time = 0
+running = False
+laps = []
+
+# Widget elements
+start_button = widgets.Button(description='Start')
+pause_button = widgets.Button(description='Pause')
+reset_button = widgets.Button(description='Reset')
+lap_button = widgets.Button(description='Lap')
+time_display = widgets.Label(value='00:00:00')
+lap_display = widgets.Textarea(value='', layout=widgets.Layout(height="200px", width="300px"))
+
+# Functions
+def format_time(seconds):
+    mins, secs = divmod(seconds, 60)
+    hours, mins = divmod(mins, 60)
+    return f'{int(hours):02d}:{int(mins):02d}:{int(secs):02d}'
+
+def update_time():
+    global elapsed_time, running
+    while running:
+        elapsed_time = time.time() - start_time
+        time_display.value = format_time(elapsed_time)
+        time.sleep(0.1)
+
+def start_stopwatch(b):
+    global start_time, running
+    if not running:
+        start_time = time.time() - elapsed_time
+        running = True
+        threading.Thread(target=update_time).start()
+
+def pause_stopwatch(b):
+    global running
+    running = False
+
+def reset_stopwatch(b):
+    global start_time, elapsed_time, running, laps
+    running = False
+    elapsed_time = 0
+    time_display.value = format_time(elapsed_time)
+    laps = []
+    lap_display.value = ''
+
+def record_lap(b):
+    global laps
+    lap_time = format_time(elapsed_time)
+    laps.append(lap_time)
+    lap_display.value = "\n".join([f'Lap {i+1}: {lap}' for i, lap in enumerate(laps)])
+
+# Linking buttons with functions
+start_button.on_click(start_stopwatch)
+pause_button.on_click(pause_stopwatch)
+reset_button.on_click(reset_stopwatch)
+lap_button.on_click(record_lap)
+
+# Display widgets
+display(widgets.HBox([start_button, pause_button, reset_button, lap_button]))
+display(time_display)
+display(widgets.Label(value='Laps:'))
+display(lap_display)
